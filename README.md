@@ -62,7 +62,7 @@ for (package in packages) {
   }
 }
 ```
-2. Downlaod the [script](metan_ammi_suite.r) to your machine 
+2. Downlaod the [script](metan_ammi_suite.R) to your machine 
 3. Run the script in RStudio or your preferred R environment.
 
 ## Folder Structure

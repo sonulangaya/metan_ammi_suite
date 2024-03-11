@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: metan_ammi_suite
+title: metan_ammi_suite - R script for streamlined Genotype × Environment interaction analysis based on AMMI model
 message: >-
   Your one-stop solution for comprehensive genotype ×
   environment interaction and stability analysis (AMMI
@@ -9,7 +9,7 @@ authors:
   - given-names: Sonu
     family-names: Langaya
     email: sonulangaya@yahoo.in
-    affiliation: 'PhD Scholar, CCS Haryana Agricultural University'
+    affiliation: 'Chaudhary Charan Singh Haryana Agricultural University'
     orcid: 'https://orcid.org/0000-0001-5450-6945'
 repository-code: 'https://github.com/sonulangaya/metan_ammi_suite'
 abstract: >-

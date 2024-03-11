@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+title: metan_ammi_suite
+message: >-
+  Your one-stop solution for comprehensive genotype ×
+  environment interaction and stability analysis (AMMI
+  model) using the metan package. 
+type: software
+authors:
+  - given-names: Sonu
+    family-names: Langaya
+    email: sonulangaya@yahoo.in
+    affiliation: 'PhD Scholar, CCS Haryana Agricultural University'
+    orcid: 'https://orcid.org/0000-0001-5450-6945'
+repository-code: 'https://github.com/sonulangaya/metan_ammi_suite'
+abstract: >-
+  metan_ammi_suite is a powerful R script that facilitates
+  comprehensive genotype × environment interaction and
+  stability analysis using the metan package. The script is
+  designed to import your data, clean and inspect it, and
+  perform a range of analyses for all traits at once, with a
+  specific focus on the AMMI model.
+keywords:
+  - ammi
+  - metan
+  - stability
+  - G × E

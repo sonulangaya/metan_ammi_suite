@@ -47,14 +47,14 @@ metan_ammi_suite is a powerful R script that facilitates comprehensive genotype 
 
 ## How to Run
 
-1. Install required R packages: metan, ggplot2, GGEBiplotGUI, ggrepel, writexl, openxlsx.
+1. Install required R packages: metan, ggplot2, ggrepel, writexl, openxlsx.
 
 ## Installation
 Before running the script, make sure to install the required R packages. You can do this by running the following code in your R environment:
 
 ```R
 # Install required R packages if not already installed
-packages <- c("metan", "ggplot2", "GGEBiplotGUI", "ggrepel", "writexl", "openxlsx")
+packages <- c("metan", "ggplot2", "ggrepel", "writexl", "openxlsx")
 
 # Check if each package is installed, and install if not
 for (package in packages) {
@@ -68,6 +68,7 @@ for (package in packages) {
 
 ## Folder Structure
 
+- **output:** Store excel output.
 - **perfor_plots:** Contains high-quality performance plots.
 - **ge_plots:** Contains plots illustrating genotype-environment effects.
 - **ammi1_plots and ammi2_plots:** Store AMMI biplots for AMMI1 and AMMI2, respectively.

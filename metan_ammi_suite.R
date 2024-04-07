@@ -4,9 +4,7 @@
 
 library(metan)
 library(ggplot2)
-library(GGEBiplotGUI)
 library(ggrepel)
-library(readxl)
 library(writexl)
 library(openxlsx)
 options(max.print = 10000)
@@ -33,7 +31,6 @@ traitall
 
 ########################### Data inspection and cleaning functions###############
 
-
 inspect(stabdata, threshold= 50, plot=FALSE) %>% rmarkdown::paged_table()
 
 
@@ -48,25 +45,32 @@ find_text_in_num(stabdata, var = all_of(trait))
 ######################### data analysis ##################################
 ###################### descriptive stats ################################
 
+dir.create(file.path(getwd(), "output"))
 
 ds <- desc_stat(stabdata, stats="all", hist = TRUE, plot_theme = theme_metan())
 
-write_xlsx(ds, "Descriptive.xlsx")
+
+write_xlsx(ds, file.path("output", "Descriptive.xlsx"))
+
 
 ######################## mean performances ##############################
 ####################### mean of genotypes #############################
 
-mg <- means_by(stabdata, GEN) 
+mg <- mean_by(stabdata, GEN) 
 mg
 View(mg)
 
 ######################### mean of environments #######################
 
-me <- means_by(stabdata, ENV)
+me <- mean_by(stabdata, ENV)
 me
 View(me)
 
-dm <- means_by(stabdata, GEN, ENV)
+########################## two way mean ###############################
+
+dm <- mean_by(stabdata, GEN, ENV)
+dm
+View(dm)
 
 ########### mean performance of genotypes across environments ###########
 
@@ -78,17 +82,23 @@ View(mge)
 
 ######### Exporting all mean performances computed above #################
 
-write_xlsx(list("Genmean" = mg, "Envmean" = me, "Genmeaninenv"= mge),"Mean peformances.xlsx")
+write_xlsx(
+  list(
+    "Genmean" = mg,
+    "Envmean" = me,
+    "Genmeaninenv" = dm,
+    "Genmeaninenv2" = mge
+  ),
+  file.path("output", "Mean Performance.xlsx")
+)
 
 #####################two-way table for all##########################
-
 
 twgy_list <- list()
 
 for (trait in traitall) {
     twgy_list[[trait]] <- make_mat(stabdata, GEN, ENV, val = trait)
 }
-
 
 result_twgy <- list()
 for (trait in traitall) {
@@ -104,7 +114,7 @@ for (trait in traitall) {
   writeData(twgy_wb, sheet = trait, x = c("GEN"), startCol = 1, startRow = 1)
 }
   
-saveWorkbook(twgy_wb, "TWmean.xlsx", overwrite = TRUE)
+saveWorkbook(twgy_wb, file.path("output", "TWmean.xlsx"), overwrite = TRUE)
 
 ############### plotting performance across environments ################
 ############### make performance for all traits in one #################
@@ -112,7 +122,23 @@ saveWorkbook(twgy_wb, "TWmean.xlsx", overwrite = TRUE)
 perfor_list <- list()
 
 for (trait in traitall) {
-  perfor_list[[trait]] <- ge_plot(stabdata, ENV, GEN, !!sym(trait), values = FALSE, average = FALSE, plot_theme = theme_metan(), colour = TRUE)
+  perfor_list[[trait]] <-
+    ge_plot(
+      stabdata,
+      ENV,
+      GEN,
+      !!sym(trait),
+      values = FALSE,
+      average = FALSE,
+      text_col_pos = c("bottom"),
+      text_row_pos = c("left"),
+      width_bar = 1.5,
+      heigth_bar = 20,
+      xlab = "ENV",
+      ylab = "GEN",
+      plot_theme = theme_metan(),
+      colour = TRUE
+    ) + geom_tile(color = "transparent") + labs(title = paste0(trait, " performance across eight environments")) + theme(legend.title = element_text(), axis.text.x.bottom = element_text(angle = 0, hjust = .5)) + guides(fill = guide_colourbar(title = trait, barwidth = 1.5, barheight = 20))
   assign(paste0(trait, "_perfor"), perfor_list[[trait]])
 }
 ######## print all plots once #########################################
@@ -127,34 +153,72 @@ dir.create(file.path(getwd(), "perfor_plots"))
 
 for (trait in traitall) {
   ggsave(filename = file.path("perfor_plots", paste0(trait, ".png")),
-         plot = perfor_list[[trait]], width = 20, height = 40,
+         plot = perfor_list[[trait]], width = 20, height = 30,
          dpi = 600, units = "cm")
 }
 
 ###################### Genotype-environment winners ####################
+### edit better argument as for some variables lower values are preferred and higher for others####
 
-win <- ge_winners(stabdata, ENV, GEN, resp = everything())
+traitall ### view your traits to decide for above condition ###
+
+win <-
+  ge_winners(
+    stabdata,
+    ENV,
+    GEN,
+    resp = everything(),
+    better = c(h, h, h, h, h, h, h, h, l, l, l, h, h, h, h, h, h, h, l) 
+  )
 win
-ranks <- ge_winners(stabdata, ENV, GEN, resp = everything(), type = "ranks")
+View(win)
+ranks <-
+  ge_winners(
+    stabdata,
+    ENV,
+    GEN,
+    resp = everything(),
+    type = "ranks",
+    better = c(h, h, h, h, h, h, h, h, l, l, l, h, h, h, h, h, h, h, l)
+  )
 ranks
+View(ranks)
 
-write_xlsx(list("winner" = win, "ranks" = ranks),"Winner Rank.xlsx")
+write_xlsx(list("winner" = win, "ranks" = ranks), file.path("output", "winner rank.xlsx"))
 
-##################### ge or gge effects ##################
-######################### combined for all ge effects #######################################
- 
+############################ ge or gge effects ############################
+######################### combined for all ge effects #########################
+######################## ge effects to excel #############################
 
-ge_list <- list()
+ge_list <- ge_effects(stabdata, ENV, GEN, resp = everything(), type = "ge")
+
+result_ge_list <- list()
+for (trait in traitall) {
+  ge_list_result <- as.data.frame(ge_list[[trait]])
+  result_ge_list[[trait]] <- ge_list_result
+}
+
+######################### save all in one excel  #############################
+
+ge_list_wb <- createWorkbook()
+for (trait in traitall) {
+  addWorksheet(ge_list_wb, sheetName = paste0(trait, ""))
+  writeData(ge_list_wb, sheet = trait, x = result_ge_list[[trait]])
+}
+saveWorkbook(ge_list_wb, file.path("output","ge_effects.xlsx"), overwrite = TRUE)
+
+######################## ge effects plots #############################
+
+ge_plots <- list()
 
 for (trait in traitall) {
-  ge <- ge_effects(stabdata, ENV, GEN, resp = trait, type = "ge")
-  ge_list[[trait]] <- plot(ge)
-}
+ge_plots[[trait]] <- plot(ge_list) + aes(ENV, GEN) + theme(legend.title = element_text()) + guides(fill = guide_colourbar(title = paste0(trait, " ge effects"), barwidth = 1.5, barheight = 20))
+}  ## also coord_flip() in place of aes
 
 ################# print all plots once #########################################
 
 for (trait in traitall) {
-  print(ge_list[[trait]])
+  print(ge_plots[[trait]])
 }
 
 ##################### high quality save all in one  ############################
@@ -163,7 +227,7 @@ dir.create(file.path(getwd(), "ge_plots"))
 
 for (trait in traitall) {
   ggsave(filename = file.path("ge_plots", paste0(trait, ".png")),
-         plot = ge_list[[trait]], width = 50, height = 15,
+         plot = ge_plots[[trait]], width = 20, height = 30,
          dpi = 600, units = "cm")
 }
 
@@ -184,7 +248,7 @@ for (trait in traitall) {
   addWorksheet(aovind_wb, sheetName = paste0(trait, ""))
   writeData(aovind_wb, sheet = trait, x = result_aovind[[trait]])
 }
-saveWorkbook(aovind_wb, "indaovall.xlsx", overwrite = TRUE)
+saveWorkbook(aovind_wb, file.path("output","indaovall.xlsx"), overwrite = TRUE)
 
 ################## Joint anova for all traits (ANOVA) ##################################
 
@@ -201,7 +265,7 @@ for (trait in traitall) {
   addWorksheet(aovjoin_wb, sheetName = paste0(trait, ""))
   writeData(aovjoin_wb, sheet = trait, x = result_aovjoin[[trait]])
 }
-saveWorkbook(aovjoin_wb, "joinaovall.xlsx", overwrite = TRUE)
+saveWorkbook(aovjoin_wb, file.path("output","joinaovall.xlsx"), overwrite = TRUE)
 
 ################## Joint anova for all traits (Details) (2) ########################
 
@@ -216,10 +280,9 @@ for (trait in traitall) {
   addWorksheet(aovjoin_wb2, sheetName = paste0(trait, ""))
   writeData(aovjoin_wb2, sheet = trait, x = result_aovjoin2[[trait]])
 }
-saveWorkbook(aovjoin_wb2, "joinaovall2.xlsx", overwrite = TRUE)
+saveWorkbook(aovjoin_wb2, file.path("output", "joinaovall2.xlsx"), overwrite = TRUE)
 
 ###################### AMMI based stability analysis for all (ANOVA)#####################################
-
 
 ammi_list<-performs_ammi(stabdata, ENV, GEN, REP, resp = everything())
 
@@ -234,7 +297,7 @@ for (trait in traitall) {
   addWorksheet(ammi_wb, sheetName = paste0(trait, ""))
   writeData(ammi_wb, sheet = trait, x = result_ammi[[trait]])
 }
-saveWorkbook(ammi_wb, "ammianova.xlsx", overwrite = TRUE)
+saveWorkbook(ammi_wb, file.path("output","ammianova.xlsx"), overwrite = TRUE)
 
 ###################### AMMI based stability analysis for all (model) #####################################
 
@@ -249,7 +312,7 @@ for (trait in traitall) {
   addWorksheet(ammi_wb2, sheetName = paste0(trait, ""))
   writeData(ammi_wb2, sheet = trait, x = result_ammi2[[trait]])
 }
-saveWorkbook(ammi_wb2, "ammimodel.xlsx", overwrite = TRUE)
+saveWorkbook(ammi_wb2, file.path("output", "ammimodel.xlsx"), overwrite = TRUE)
 
 ###################### AMMI based stability analysis for all (Means G*E)#####################################
 
@@ -264,8 +327,7 @@ for (trait in traitall) {
   addWorksheet(ammi_wb3, sheetName = paste0(trait, ""))
   writeData(ammi_wb3, sheet = trait, x = result_ammi3[[trait]])
 }
-saveWorkbook(ammi_wb3, "ammimeansge.xlsx", overwrite = TRUE)
-
+saveWorkbook(ammi_wb3, file.path("output","ammimeansge.xlsx"), overwrite = TRUE)
 
 ######################### AMMI biplots for all in one AMMI 1#################### 
 
@@ -289,14 +351,24 @@ for (trait in traitall) {
                                      col.line = "grey",
                                      col.gen = "#215C29",
                                      col.env = "#F68A31",
+                                     col.segm.gen = transparent_color(),
+                                     col.segm.env = "#F68A31",
                                      size.tex.gen = 3,
                                      size.tex.env = 3,
                                      size.tex.lab = 12,
                                      size.line = .4,
+                                     line.type = 'dotdash',
+                                     line.alpha = .8,
+                                     highlight =,
+                                     plot_theme = theme_metan(),
                                      size.segm.line = .4,
-                                     leg.lab = c("Environment", "Genotype"),
-                                     line.type = 'dashed') + theme (panel.background = element_rect(fill = "white"))
-                                    assign(paste0(trait, "_ammi1"), ammi1_list[[trait]])
+                                     leg.lab = c("Environment", "Genotype")) + labs(title = paste0("AMMI 1 biplot for ", trait)) + theme(
+                                       plot.title = element_text(color = "black"),
+                                       panel.background = element_rect(fill = "white"), plot.background = element_rect(fill = "white"),
+                                       legend.position = c(0.88, .05),
+                                       legend.background = element_rect(fill = NA)
+                                     )
+  assign(paste0(trait, "_ammi1"), ammi1_list[[trait]])
 }
 ######## print all plots once #########################################
 
@@ -324,6 +396,7 @@ for (trait in traitall) {
                                      type = 2,
                                      first = "PC1",
                                      second = "PC2",
+                                     x.lab = trait,
                                      repel = TRUE,
                                      max_overlaps = 50,
                                      shape.gen = 21,
@@ -335,13 +408,22 @@ for (trait in traitall) {
                                      col.line = "grey",
                                      col.gen = "#215C29",
                                      col.env = "#F68A31",
+                                     col.segm.gen = transparent_color(),
+                                     col.segm.env = "#F68A31",
                                      size.tex.gen = 3,
                                      size.tex.env = 3,
                                      size.tex.lab = 12,
                                      size.line = .4,
+                                     line.type = 'dotdash',
+                                     line.alpha = .8,
+                                     highlight =,
+                                     plot_theme = theme_metan(),
                                      size.segm.line = .4,
-                                     leg.lab = c("Environment", "Genotype"),
-                                     line.type = 'dashed') + theme (panel.background = element_rect(fill = "white"))
+                                     leg.lab = c("Environment", "Genotype")) + labs(title = paste0("AMMI 2 biplot for ", trait)) + theme(
+                                       plot.title = element_text(color = "black"),
+                                       panel.background = element_rect(fill = "white"), plot.background = element_rect(fill = "white"),
+                                       legend.position = c(0.88, .05),
+                                       legend.background = element_rect(fill = NA))
   assign(paste0(trait, "_ammi2"), ammi2_list[[trait]])
 }
 ######## print all plots once #########################################
@@ -359,4 +441,3 @@ for (trait in traitall) {
          plot = ammi2_list[[trait]], width = 15, height = 15,
          dpi = 600, units = "cm")
 }
-

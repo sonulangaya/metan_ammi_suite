@@ -1,4 +1,4 @@
-# metan_ammi_suite
+# metan_ammi_suite [![DOI](https://zenodo.org/badge/725119457.svg)](https://zenodo.org/doi/10.5281/zenodo.10804419)
 # R script for comprehensive G * E analysis (AMMI model) based on metan package
 Your one-stop solution for comprehensive genotype × environment interaction and stability analysis (AMMI model) using the metan package. Save time, perform analyses for all traits at once, and gain insightful visualizations effortlessly!"
 
